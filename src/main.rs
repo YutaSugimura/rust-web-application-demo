@@ -2,7 +2,7 @@ use actix_files as fs;
 use actix_session::{CookieSession, Session};
 use actix_web::http::{header, Method, StatusCode};
 use actix_web::{
-    error, get, guard, middleware, web, App, Error, HttpRequest, HttpResponse,
+    get, guard, middleware, web, App, HttpRequest, HttpResponse,
     HttpServer, Result,
 };
 
@@ -14,14 +14,16 @@ async fn index(session: Session, req: HttpRequest) -> Result<HttpResponse> {
     if let Some(count) = session.get::<i32>("counter")? {
         println!("SESSION value: {}", count);
         counter = count + 1;
+        session.set("counter", counter)?;
+    } else {
+        session.set("counter", counter)?;
     }
-
-    session.set("counter", counter)?;
 
     Ok(HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(include_str!("../static/index.html")))
 }
+
 
 async fn p404() -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open("static/404.html")?.set_status_code(StatusCode::NOT_FOUND))
@@ -31,6 +33,8 @@ async fn p404() -> Result<fs::NamedFile> {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
+            .wrap(middleware::Logger::default())
+            .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .service(index)
             .service(fs::Files::new("/static", "static").show_files_listing())
             .default_service(
