@@ -24,6 +24,14 @@ async fn index(session: Session, req: HttpRequest) -> Result<HttpResponse> {
         .body(include_str!("../static/index.html")))
 }
 
+#[get("/hello")]
+async fn hello(session: Session, req: HttpRequest) -> Result<HttpResponse> {
+    Ok(HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/hello.html"))
+    )
+}
+
 
 async fn p404() -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open("static/404.html")?.set_status_code(StatusCode::NOT_FOUND))
@@ -36,6 +44,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .service(index)
+            .service(hello)
             .service(fs::Files::new("/static", "static").show_files_listing())
             .default_service(
             web::resource("")
