@@ -32,6 +32,18 @@ async fn hello(session: Session, req: HttpRequest) -> Result<HttpResponse> {
     )
 }
 
+use rust_web::rand_func::rand_num;
+
+#[get("/rand_page")]
+async fn rand_page(session: Session, req: HttpRequest) -> Result<HttpResponse> {
+    rand_num();
+
+    Ok(HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/hello.html"))
+    )
+}
+
 
 async fn p404() -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open("static/404.html")?.set_status_code(StatusCode::NOT_FOUND))
@@ -45,6 +57,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .service(index)
             .service(hello)
+            .service(rand_page)
             .service(fs::Files::new("/static", "static").show_files_listing())
             .default_service(
             web::resource("")
